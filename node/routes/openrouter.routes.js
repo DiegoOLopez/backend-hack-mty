@@ -4,6 +4,11 @@ const router = express.Router();
 const axios = require('axios');
 
 
+const { OpenRouterService } = require('./../services/openrouter.service')
+
+const service = new OpenRouterService(process.env.OPENROUTER_API_KEY);
+
+
 // endpoint para IA de OpenRouter
 router.get("/", async (req, res) => {
   try {
@@ -32,5 +37,28 @@ router.get("/", async (req, res) => {
     res.status(500).json({ error: "Error en OpenRouter", details: err.response?.data || err.message });
   }
 });
+
+
+router.post("/", async (req, res) => {
+  const { message } = req.body;
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache");
+  res.setHeader("Connection", "keep-alive");
+
+  try {
+    for await (const chunk of service.streamCompletion(message)) {
+      res.write(`data: ${chunk}\n\n`);
+    }
+    res.write("event: done\ndata: [DONE]\n\n");
+  } catch (err) {
+    console.error("Error:", err.message);
+    res.write(`data: Error: ${err.message}\n\n`);
+  } finally {
+    res.end();
+  }
+});
+
+
+
 
 module.exports = router;
