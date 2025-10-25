@@ -7,8 +7,7 @@ const clienteRouter = require('./cliente');
 const accountRouter = require('./account.routes')
 const transferRouter = require('./transfer.routes');
 const openRouter = require('./openrouter.routes');
-const speechToText = require('../services/elevenlabs.service');
-const textToSpeech = require('../services/elevenlabs.service');
+const speechToText = require('./sst-tts.routes');
 
 
 function routerAPI(app){
@@ -19,8 +18,7 @@ function routerAPI(app){
     router.use('/account', accountRouter);
     router.use('/transfer', transferRouter);
     router.use('/openrouter', openRouter);
-    router.use('/sst', speechToText);
-    router.use('/tts', textToSpeech);
+    router.use('/speechToText', speechToText);
 }
 
 module.exports = routerAPI;

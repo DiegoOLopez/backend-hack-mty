@@ -1,13 +1,14 @@
 //sst-tts.routes.js     
-import express from "express";
-import multer from "multer";
-import dotenv from "dotenv";
-import { speechToText, textToSpeech } from "../services/elevenlabs.service.js";
-import { getResponse } from "../services/openrouter.service.js";
-import { ElevenLabsClient } from "@elevenlabs/elevenlabs-js";
+const express = require('express');
+const multer = require('multer');
+const dotenv = require('dotenv');
+const { speechToText, textToSpeech } = require('../services/elevenlabs.service.js');
+const { getResponse } = require('../services/openrouter.service.js');
+const { ElevenLabsClient } = require('@elevenlabs/elevenlabs-js');
+
 
 dotenv.config();
-const router = express();
+const router = express.Router();
 const upload = multer({ dest: "uploads/" });
 const PORT = process.env.PORT || 3000;
 
@@ -87,7 +88,5 @@ router.post("/stt", upload.single("audio"), async (req, res) => {
 });
 
 
-// Iniciar el servidor para pruebas
-router.listen(PORT, () => console.log(`Servidor corriendo en http://localhost:${PORT}`));
 
 module.exports = router;
