@@ -6,7 +6,9 @@ export class OpenRouterService {
     this.apiKey = apiKey;
   }
 
-  // 🔹 Llamada normal (respuesta completa)
+  /**
+   * Llama a OpenRouter y devuelve la respuesta como texto completo
+   */
   async getCompletion(message, model = "openai/gpt-4o-mini") {
     const response = await axios.post(
       "https://openrouter.ai/api/v1/chat/completions",
@@ -25,7 +27,9 @@ export class OpenRouterService {
     return response.data.choices?.[0]?.message?.content || "Sin respuesta";
   }
 
-  // 🔹 Versión streaming que devuelve un AsyncGenerator
+  /**
+   * Stream de respuesta (para respuestas largas o en tiempo real)
+   */
   async *streamCompletion(message, model = "openai/gpt-4o-mini") {
     const response = await axios.post(
       "https://openrouter.ai/api/v1/chat/completions",
