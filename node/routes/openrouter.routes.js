@@ -152,7 +152,7 @@ router.post("/voice-chat", upload.single("audio"), async (req, res) => {
 
     // Convertir respuesta de texto a voz (TTS)
     const audioStream = await elevenlabs.textToSpeech.convert(
-      "JBFqnCBsd6RMkjVDRZzb", // ID de voz — puedes cambiarlo por otra
+      "V6rHKMlMDJPdxDisHSfZ", // ID de voz — puedes cambiarlo por otra
       {
         text: botResponse,
         modelId: "eleven_multilingual_v2",
