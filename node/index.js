@@ -12,7 +12,7 @@ const app = express();
 const cors = require('cors');
 
 // CONFIGURAR CORS
-//const whileList = ['http://localhost:3000', 'https://myapp.co', 'http://localhost:4200', `https://${process.env.REMOTE_HOST}`,'exp://192.168.43.72:8081', 'http://192.168.43.72:8081', 'http://localhost:8081', 'http://192.168.43.185:8081'];
+const whileList = ['http://localhost:3000', 'https://myapp.co', 'http://localhost:4200', `https://${process.env.REMOTE_HOST}`,'exp://192.168.43.72:8081', 'http://192.168.43.72:8081', 'http://localhost:8081', 'http://192.168.43.185:8081'];
 
 
 //PRUEBA TEMPORAL
@@ -27,7 +27,7 @@ const options = {
       callback(new Error('no permitido'));
     }
   },
-}
+} 
 
 app.use(cors(options));
 
