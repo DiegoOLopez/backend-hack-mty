@@ -62,14 +62,77 @@ const last_conversacion = await models.Conversacion.findOne({
   } else {
     id_conversacion = last_conversacion.id
   }
+
+
+
+
+const prompt = `
+RESPONDE **EXCLUSIVAMENTE** en JSON. No agregues nada más, no expliques nada, no uses comillas triples ni backticks. La única salida debe ser:
+
+{
+  "message": "...",
+  "status": "Processing" | "Done"
+}
+Reglas:
+
+1. Siempre devuelves JSON válido, sin explicaciones extra.
+2. message es lo que el usuario verá.
+3. status indica:
+   - "processing" si necesitas más información del usuario para completar la acción.
+   - "done" si la acción se completó o el usuario indica que quiere terminar la conversación.
+4. Si detectas que el usuario da por terminada la conversación, cambia status a "done" y el message puede ser un cierre amigable.
+5. Nunca incluyas instrucciones internas ni texto fuera del JSON.
+6. Si falta información para completar la acción, solicita solo lo necesario en message y pon status a "processing".
+
+Ejemplos:
+
+Usuario: "Quiero transferir $500"  
+Respuesta esperada:
+{
+  "message": "¿A quién deseas transferir los $500?",
+  "status": "Processing"
+}
+
+Usuario: "A Juan"  
+Respuesta esperada:
+{
+  "message": "Listo, simulando transferencia de $500 a Juan",
+  "status": "Done"
+}
+
+Usuario: "No quiero continuar"  
+Respuesta esperada:
+{
+  "message": "Entendido, terminamos la conversación.",
+  "status": "Done"
+}
+`;
+  console.log("Se setea el contexto")
   // Guardamos el mensaje del usuario
   await models.Mensaje.create({
-    remitente: 'Usuario',
-    contenido: message,
+    remitente: 'user',
+    contenido: prompt + message,
     fecha_envio: Date.now(),
     conversacion_id: id_conversacion
   })
+    const mensajes = await models.Mensaje.findAll({
+  where: { conversacion_id: id_conversacion },
+  order: [['fecha_envio', 'ASC']] // orden cronológico
+  });
 
+  console.log("Se cargan los mensajes ")
+  const context = mensajes.map(msg => ({
+  role: msg.remitente === 'user' ? 'user' : 'assistant',
+  content: msg.contenido
+  }));
+
+  console.log("Se carga el contexto")
+
+    context.unshift({
+    role: 'system',
+    content: 'Eres un Agente de banca conversacional que entiende productos financieros válidos de Capital One, puede guiar al usuario para adquirir productos, hacer transferencias, validar cuentas y saldo, y generar confirmacionesAgente de banca conversacional que entiende productos financieros válidos de Capital One, puede guiar al usuario para adquirir productos, hacer transferencias, validar cuentas y saldo, y generar confirmaciones, mientras que el backend maneja la información real y la seguridad'
+  });
+  console.log("Se crea el contexto")
   res.setHeader("Content-Type", "text/event-stream");
   res.setHeader("Cache-Control", "no-cache");
   res.setHeader("Connection", "keep-alive");
@@ -90,11 +153,11 @@ const last_conversacion = await models.Conversacion.findOne({
   }*/
  try {
   // Llamada normal que devuelve la respuesta completa
-  const botResponse = await service.getCompletion(message); // ya no streamCompletion
+  const botResponse = await service.getCompletion(message, context); // ya no streamCompletion
  const responseJSON = JSON.parse(botResponse);
   // Guardamos la respuesta en la base de datos
   await models.Mensaje.create({
-    remitente: 'model',
+    remitente: 'assistant',
     contenido: responseJSON.message,
     fecha_envio: Date.now(),
     conversacion_id: id_conversacion
