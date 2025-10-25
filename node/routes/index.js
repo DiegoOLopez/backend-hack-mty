@@ -6,6 +6,7 @@ const authRouter = require('./auth.routes');
 const clienteRouter = require('./cliente');
 const accountRouter = require('./account.routes')
 const transferRouter = require('./transfer.routes');
+const openRouter = require('./openrouter.routes');
 
 
 function routerAPI(app){
@@ -15,6 +16,7 @@ function routerAPI(app){
     router.use('/cliente', clienteRouter);
     router.use('/account', accountRouter);
     router.use('/transfer', transferRouter);
+    router.use('/openrouter', openRouter);
 }
 
 module.exports = routerAPI;
