@@ -111,16 +111,19 @@ class UsuarioController {
         return res.status(401).json({ message: 'Credenciales invalidas' });
       }
       const usuario = req.user;
+      console.log(req.user, "\n\n\n\n\n")
       // Buscamos el rol
       const payload = {
         sub: usuario.id_usuario,
-        id_empresa: usuario.id_empresa
+        id_cliente: usuario.id_cliente
       };
+      console.log(payload, "\n\n\n\n")
       const token = jwt.sign(payload, config.jwtSecret);
       if (token) {
         res.status(200).json({
           usuario,
           token,
+          payload
         });
       } else {
         res.status(401).json({ message: 'Credenciales invalidas' });

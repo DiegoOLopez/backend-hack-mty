@@ -99,7 +99,8 @@ class AccountController {
 
     async findAccountsByCustomer(req, res, next) {
         try {
-            const { id_cliente } = req.params;
+            const { id_cliente } = req.user;
+            console.log(req.user)
             const result = await service.findAccountsByCustomer(id_cliente);
             res.json(result)
         } catch (error) {

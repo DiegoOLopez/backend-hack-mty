@@ -9,6 +9,7 @@ const options = {
 }
 const JwtStrategy  = new Strategy(
   options, (payload, done) => {
+    console.log(payload, "-*A**********************************************")
     return done(null, payload);
   }
 );
