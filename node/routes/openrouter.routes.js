@@ -50,17 +50,20 @@ const last_conversacion = await models.Conversacion.findOne({
   order: [['id', 'DESC']]
 });
   let id_conversacion;
-  if (!last_conversacion || last_conversacion.status == 'Done'){
+  let json_conversation;
+  if (!last_conversacion || last_conversacion.status == 'done'){
       const response = await models.Conversacion.create({
         usuario_id: req.user.sub,
         nombre: "conversacion",
         fecha_creacion: Date.now(),
-        status: "Process"
+        status: "process",
+        data: {status: "process"}
       });
-
       id_conversacion = response.id
+      json_conversation = response.data
   } else {
     id_conversacion = last_conversacion.id
+    json_conversation = last_conversacion.data
   }
 
 
@@ -69,10 +72,31 @@ const last_conversacion = await models.Conversacion.findOne({
 const prompt = `
 RESPONDE **EXCLUSIVAMENTE** en JSON. No agregues nada más, no expliques nada, no uses comillas triples ni backticks. La única salida debe ser:
 
+Deberas rellenar en base a todo lo que haya dicho el cliente, cuando tengas los datos listos podras autirizar cambiando a decision listo, si el usuario llegar a terminar la conversacion, lo cambias a cancelado, y si aun no terminas lo cambias a procesando para pedir la informacion restante
 {
-  "message": "...",
-  "status": "Processing" | "Done"
+  "accion": "transferencia | alta_contacto | contratar_producto",
+  "decision": "listo | procesando | cancelado",
+  "tipo_producto": "tarjeta_credito | cuenta_corriente | cuenta_ahorro | prestamo_auto",
+  "detalle": {
+    "numero_de_cuenta_saliente": 0 // Es el numero de cuenta del que se mandara el dinero de la transferencia
+    "numero_de_cuenta_destino": 0 // Es el numero de cuenta que recibira el dinero
+    "nombre_cuenta_saliente": "" // Es el nombre de la cuenta que saldra el dinero del cliente
+    "nombre_contacto_destino": "" // Es a quien se le mandara el dinero en caso de ser contacto 
+    "monto": 0,                 // Solo para transferencias
+    "moneda": "USD",            // Opcional, default USD
+    "numero_de_cuenta": "",         // Numero de cuenta exclusivo
+    "nombre_del_destinatario": "", // Numero de persona a transferir exclusivo
+    "nombre_alta_contacto": "", // Nombre exclusivo para la persona que se da de alta como contacto
+    "contacto_id": null,        // ID interno del contacto si ya existe
+    "producto_nombre": "",       // Nombre del producto (ej: Quicksilver Rewards)
+    "usuario_id": null           // ID del usuario que solicita la acción
+  },
+  "status": "processing | done", // processing si falta info, done si la acción se completó
+  "mensaje_usuario": ""          // Mensaje que verá el usuario
 }
+
+Tienes acceso al registro si no es null
+${json_conversation}
 Reglas:
 
 1. Siempre devuelves JSON válido, sin explicaciones extra.
@@ -90,21 +114,21 @@ Usuario: "Quiero transferir $500"
 Respuesta esperada:
 {
   "message": "¿A quién deseas transferir los $500?",
-  "status": "Processing"
+  "status": "processing"
 }
 
 Usuario: "A Juan"  
 Respuesta esperada:
 {
   "message": "Listo, simulando transferencia de $500 a Juan",
-  "status": "Done"
+  "status": "done"
 }
 
 Usuario: "No quiero continuar"  
 Respuesta esperada:
 {
   "message": "Entendido, terminamos la conversación.",
-  "status": "Done"
+  "status": "done"
 }
 `;
   console.log("Se setea el contexto")
@@ -153,30 +177,51 @@ Respuesta esperada:
   }*/
  try {
   // Llamada normal que devuelve la respuesta completa
-  const botResponse = await service.getCompletion(message, context); // ya no streamCompletion
- const responseJSON = JSON.parse(botResponse);
+  const botResponse = await service.getCompletion(message, context, json_conversation); // ya no streamCompletion
+  console.log(botResponse, "bot responseee")
   // Guardamos la respuesta en la base de datos
   await models.Mensaje.create({
     remitente: 'assistant',
-    contenido: responseJSON.message,
+    contenido: botResponse.mensaje_usuario,
     fecha_envio: Date.now(),
     conversacion_id: id_conversacion
   });
-if (responseJSON.status === "Done") {
-  const conversacion = await models.Conversacion.findByPk(id_conversacion);
-  
-  if (conversacion) {
-    await conversacion.update({
-      status: responseJSON.status
-    });
+  if (botResponse.status === "done") {
+    const conversacion = await models.Conversacion.findByPk(id_conversacion);
+    
+    if (conversacion) {
+      await conversacion.update({
+        status: botResponse.status,
+        data: botResponse
+      });
+    }
+    if (botResponse.decision === "listo"){
+      console.log("Listo")
+      console.log(botResponse.accion)
+      if (botResponse.accion === "alta_contacto"){
+        const cuentas = (await axios.get("http://api.nessieisreal.com/accounts?key=b9c71161ea6125345750dcb92f0df27c")).data;
+        for (let i = 0; i < cuentas.length; i++){
+          console.log(cuentas[i], "====", botResponse.detalle.numero_de_cuenta)
+          if (cuentas[i].account_number == botResponse.detalle.numero_de_cuenta){
+            models.Contacto.create({
+              nombre: botResponse.detalle.nombre_alta_contacto,
+              numero_cuenta: botResponse.detalle.numero_de_cuenta,
+              cuenta_id: cuentas[i]._id,
+              fecha_creacion: Date.now()
+            })
+          }
+        }
+      }
+    } else {
+      console.log("Cancelado")
+    }
   }
-}
 
 
 
 
   // Enviamos la respuesta al cliente
-  res.write(responseJSON.message);
+  res.write(botResponse.mensaje_usuario);
   res.end();
 } catch (err) {
     console.error("Error:", err.message);
@@ -194,6 +239,8 @@ const upload = multer({ dest: "uploads/" });
 const { speechToText } = require("../services/elevenlabs.service.js");
 const { getResponse } = require("../services/openrouter.service.js");
 const { ElevenLabsClient } = require("@elevenlabs/elevenlabs-js");
+const { conversations } = require('@elevenlabs/elevenlabs-js/api/resources/conversationalAi/index.js');
+const { update } = require('../controller/cliente.controller.js');
 
 const elevenlabs = new ElevenLabsClient({
   apiKey: process.env.ELEVENLABS_API_KEY,

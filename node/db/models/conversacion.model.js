@@ -10,6 +10,10 @@ const ConversacionSchema = {
     primaryKey: true,
     type: DataTypes.INTEGER
   },
+    data: {
+    type: DataTypes.JSON, // MySQL soporta JSON
+    allowNull: false
+  },
 
   usuario_id: {
     allowNull: false,

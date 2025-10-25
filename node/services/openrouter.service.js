@@ -9,9 +9,24 @@ export class OpenRouterService {
   /**
    * Llama a OpenRouter y devuelve la respuesta como texto completo
    */
-  async getCompletion(message, context, model = "openai/gpt-4o-mini") {
+  async getCompletion(message, context, json_conversation, model = "openai/gpt-4o-mini") {
 
-    
+  const data_action = {
+  "accion": "transferencia | alta_contacto | contratar_producto",
+  "accion": "listo | procesando | cancelado",
+  "tipo_producto": "tarjeta_credito | cuenta_corriente | cuenta_ahorro | prestamo_auto",
+  "detalle": {
+    "monto": 0,                 // Solo para transferencias
+    "moneda": "USD",            // Opcional, default USD
+    "destinatario": "",         // Nombre del contacto o cuenta
+    "contacto_id": null,        // ID interno del contacto si ya existe
+    "producto_nombre": "",       // Nombre del producto (ej: Quicksilver Rewards)
+    "usuario_id": null           // ID del usuario que solicita la acción
+  },
+  "status": "processing | done", // processing si falta info, done si la acción se completó
+  "mensaje_usuario": ""          // Mensaje que verá el usuario
+}
+
   const tarjetasCredito = {
     "Venture X Rewards": {
       "descripcion": "Tarjeta premium de recompensas de viaje con 10X millas en hoteles y alquileres de autos reservados a través de Capital One Travel.",
@@ -110,10 +125,18 @@ export class OpenRouterService {
           Authorization: `Bearer ${this.apiKey}`,
           "Content-Type": "application/json",
         },
+        timeout: 15000
       }
     );
 
-    return response.data.choices?.[0]?.message?.content || "Sin respuesta";
+
+    try {
+      json_conversation = JSON.parse(response.data.choices?.[0]?.message?.content || "{}");
+    } catch (error) {
+      console.error("❌ Error al parsear JSON:", error.message);
+    }
+
+    return  json_conversation;
   }
 
   /**
@@ -142,6 +165,10 @@ Cuentas corrientes: ${cuentasCorrientes}
 Cuentas de ahorro: ${cuentasAhorro}
 Prestamo de autos: ${prestamosAuto}
 Si el cliente trata de contratar un producto, trata de llevarlo a la contratacion lo mas rapido posible, tienes maximo 3 mensajes de respuesta para realizar la contratacion
+
+Requisitos para cada accion:
+alta_contacto: Solo se necesita nombre_alta_contacto y numero_de_cuenta, una vez proporcionados se realiza la alta
+transferencia: Necesitamos el nombre_cuenta_saliente, nombre_contacto_destino y monto una vez proporcionados, se dicen los datos como monto, destinatario, si el cliente acepta, se hace la transferencia de decision a listo
 
 Ejemplos:
 
