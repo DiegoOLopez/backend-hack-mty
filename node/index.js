@@ -1,7 +1,7 @@
 const express = require('express');
 const morgan = require('morgan');
 const passport = require('./utils/auth');
-const port = process.env.port || 3000   ;
+const port = process.env.PORT || 3000   ;
 
 const routes = require('./routes');
 
@@ -12,7 +12,11 @@ const app = express();
 const cors = require('cors');
 
 // CONFIGURAR CORS
-const whileList = ['http://localhost:3000', 'https://myapp.co', 'http://localhost:4200', `https://${process.env.REMOTE_HOST}`, `http://localhost:8081`];
+//const whileList = ['http://localhost:3000', 'https://myapp.co', 'http://localhost:4200', `https://${process.env.REMOTE_HOST}`,'exp://192.168.43.72:8081', 'http://192.168.43.72:8081', 'http://localhost:8081', 'http://192.168.43.185:8081'];
+
+
+//PRUEBA TEMPORAL
+app.use(cors({ origin: '*', credentials: true }));
 
 // Configurar OPS DE CORS
 const options = {
@@ -43,6 +47,6 @@ app.use((err, req, res, next) => {
     });
 });
 const HOST = "0.0.0.0";
-app.listen(port, () => {
-  console.log(`Servidor corriendo en ${port}`);
+app.listen(port, HOST, () => {
+  console.log(`Servidor corriendo en http://${HOST}:${port}`);
 });
