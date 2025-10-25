@@ -4,6 +4,11 @@ const router = express.Router();
 const axios = require('axios');
 
 
+const { OpenRouterService } = require('./../services/openrouter.service')
+
+const service = new OpenRouterService(process.env.OPENROUTER_API_KEY);
+
+
 // endpoint para IA de OpenRouter
 router.get("/", async (req, res) => {
   try {
@@ -32,7 +37,6 @@ router.get("/", async (req, res) => {
     res.status(500).json({ error: "Error en OpenRouter", details: err.response?.data || err.message });
   }
 });
-
 
 
 
