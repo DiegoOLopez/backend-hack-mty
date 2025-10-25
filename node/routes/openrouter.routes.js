@@ -186,6 +186,9 @@ if (responseJSON.status === "Done") {
   }
 });
 
+
+
+
 // Endpoint combinado: voz -> texto -> OpenRouter -> voz
 const multer = require("multer");
 const fs = require("fs");
@@ -199,55 +202,124 @@ const elevenlabs = new ElevenLabsClient({
   apiKey: process.env.ELEVENLABS_API_KEY,
 });
 
-router.post("/voice-chat", upload.single("audio"), async (req, res) => {
+router.post("/voice-chat", upload.single("audio"), validacionJWT, async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: "Se requiere archivo de audio" });
   }
 
   try {
-    // Transcribir voz a texto (STT)
+    // 1️⃣ Transcribir voz a texto (STT)
     const userText = await speechToText(req.file.path);
     console.log("Usuario dijo:", userText);
 
-    // Obtener respuesta de OpenRouter
-    const botResponse = await service.getCompletion(userText);
-    console.log("OpenRouter respondió:", botResponse);
+    // 2️⃣ Obtener última conversación del usuario
+    const last_conversacion = await models.Conversacion.findOne({
+      where: { usuario_id: req.user.sub },
+      order: [['id', 'DESC']]
+    });
 
-    // Convertir respuesta de texto a voz (TTS)
+    let id_conversacion;
+    if (!last_conversacion || last_conversacion.status === 'Done') {
+      const response = await models.Conversacion.create({
+        usuario_id: req.user.sub,
+        nombre: "conversacion",
+        fecha_creacion: Date.now(),
+        status: "Process"
+      });
+      id_conversacion = response.id;
+    } else {
+      id_conversacion = last_conversacion.id;
+    }
+
+    // 3️⃣ Guardar mensaje del usuario en DB
+    const prompt = `
+RESPONDE **EXCLUSIVAMENTE** en JSON. No agregues nada más, no expliques nada, no uses comillas triples ni backticks. La única salida debe ser:
+
+{
+  "message": "...",
+  "status": "Processing" | "Done"
+}
+Reglas:
+1. Siempre devuelves JSON válido, sin explicaciones extra.
+2. message es lo que el usuario verá.
+3. status indica:
+   - "processing" si necesitas más información del usuario.
+   - "done" si la acción se completó o el usuario da por terminada la conversación.
+`;
+    await models.Mensaje.create({
+      remitente: 'user',
+      contenido: prompt + userText,
+      fecha_envio: Date.now(),
+      conversacion_id: id_conversacion
+    });
+
+    // 4️⃣ Construir contexto de conversación
+    const mensajes = await models.Mensaje.findAll({
+      where: { conversacion_id: id_conversacion },
+      order: [['fecha_envio', 'ASC']]
+    });
+
+    const context = mensajes.map(msg => ({
+      role: msg.remitente === 'user' ? 'user' : 'assistant',
+      content: msg.contenido
+    }));
+
+    context.unshift({
+      role: 'system',
+      content: 'Eres un Agente de banca conversacional que entiende productos financieros válidos de Capital One, puede guiar al usuario para adquirir productos, hacer transferencias, validar cuentas y saldo, y generar confirmaciones. El backend maneja la información real y la seguridad.'
+    });
+
+    // 5️⃣ Obtener respuesta de OpenRouter
+    const botResponse = await service.getCompletion(userText, context);
+    const responseJSON = JSON.parse(botResponse);
+
+    // Guardar mensaje del bot en DB
+    await models.Mensaje.create({
+      remitente: 'assistant',
+      contenido: responseJSON.message,
+      fecha_envio: Date.now(),
+      conversacion_id: id_conversacion
+    });
+
+    // Actualizar estado de conversación si terminó
+    if (responseJSON.status === "Done") {
+      const conversacion = await models.Conversacion.findByPk(id_conversacion);
+      if (conversacion) {
+        await conversacion.update({ status: responseJSON.status });
+      }
+    }
+
+    // 6️⃣ Convertir respuesta a voz (TTS)
     const audioStream = await elevenlabs.textToSpeech.convert(
-      "V6rHKMlMDJPdxDisHSfZ", // ID de voz — puedes cambiarlo por otra
+      "V6rHKMlMDJPdxDisHSfZ",
       {
-        text: botResponse,
+        text: responseJSON.message,
         modelId: "eleven_multilingual_v2",
         outputFormat: "mp3_44100_128",
       }
     );
 
-    // Convertir stream a buffer
     const chunks = [];
-    for await (const chunk of audioStream) {
-      chunks.push(chunk);
-    }
+    for await (const chunk of audioStream) chunks.push(chunk);
     const audioBuffer = Buffer.concat(chunks);
 
-    // Enviar respuesta como archivo de audio
+    // 7️⃣ Enviar audio como respuesta
     res.set({
       "Content-Type": "audio/mpeg",
       "Content-Length": audioBuffer.length,
     });
     res.send(audioBuffer);
+
   } catch (error) {
     console.error("Error en /voice-chat:", error);
     res.status(500).json({ error: "Error procesando la conversación" });
   } finally {
-    //  Eliminar archivo temporal
-    try {
-      fs.unlinkSync(req.file.path);
-    } catch (e) {
-      console.warn("No se pudo eliminar archivo temporal:", e.message);
-    }
+    // Eliminar archivo temporal
+    try { fs.unlinkSync(req.file.path); } 
+    catch (e) { console.warn("No se pudo eliminar archivo temporal:", e.message); }
   }
 });
+
 
 
 
