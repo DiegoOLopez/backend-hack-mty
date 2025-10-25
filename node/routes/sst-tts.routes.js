@@ -75,7 +75,7 @@ router.post("/tts", async (req, res) => {
 
 
 // Endpoint STT
-router.post("/stt", upload.single("audio"), async (req, res) => {
+router.post("/", upload.single("audio"), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: "Se requiere archivo de audio" });
 
   try {

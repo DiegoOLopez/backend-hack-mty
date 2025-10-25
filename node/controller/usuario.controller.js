@@ -126,7 +126,10 @@ class UsuarioController {
           payload
         });
       } else {
-        res.status(401).json({ message: 'Credenciales invalidas' });
+
+        console.log("Credenciales invalidas ->" + req.body.correo);
+        console.log("Credenciales invalidas ->" + req.body.contrasena);
+        res.status(401).json({ message: 'Credenciales invalidas', correo: req.body.correo});
       }
     } catch (error) {
       console.log("Error router ->" + error);

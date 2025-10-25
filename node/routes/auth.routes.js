@@ -12,6 +12,8 @@ router.post('/login', loginLimiter, (req, res, next) => {
       return next(err);
     }
     if (!user) {
+      console.log("Credenciales invalidas ->" + req.body.correo);
+      console.log("Credenciales invalidas ->" + req.body.contrasena);
       return res.status(401).json({ message: info?.message || 'Credenciales inválidas' });
     }
 
