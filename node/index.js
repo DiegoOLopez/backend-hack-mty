@@ -1,7 +1,7 @@
 const express = require('express');
 const morgan = require('morgan');
 const passport = require('./utils/auth');
-const port = process.env.port || 3001   ;
+const port = process.env.port || 3000   ;
 
 const routes = require('./routes');
 
