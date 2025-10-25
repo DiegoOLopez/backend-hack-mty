@@ -1,13 +1,13 @@
+//sst-tts.routes.js     
 import express from "express";
 import multer from "multer";
 import dotenv from "dotenv";
-import { speechToText, textToSpeech } from "./services/elevenlabs.service.js";
-import { getResponse } from "./services/openrouter.service.js";
+import { speechToText, textToSpeech } from "../services/elevenlabs.service.js";
+import { getResponse } from "../services/openrouter.service.js";
 import { ElevenLabsClient } from "@elevenlabs/elevenlabs-js";
-import testOpenRouterRoutes from "./routes/testopenrouter.routes.js";
 
 dotenv.config();
-const app = express();
+const router = express();
 const upload = multer({ dest: "uploads/" });
 const PORT = process.env.PORT || 3000;
 
@@ -16,20 +16,20 @@ const elevenlabs = new ElevenLabsClient({
   apiKey: process.env.ELEVENLABS_API_KEY,
 });
 
-app.use(express.json());
+router.use(express.json());
 
-// Endpoint de voice-chat existente
-app.post("/voice-chat", upload.single("audio"), async (req, res) => {
+/*// Endpoint de voice-chat existente
+router.post("/voice-chat", upload.single("audio"), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: "Se requiere archivo de audio" });
 
   try {
-    // 1️⃣ Convertir voz a texto
+    // Convertir voz a texto
     const userText = await speechToText(req.file.path);
 
-    // 2️⃣ Obtener respuesta de OpenRouter
+    // Obtener respuesta de OpenRouter
     const botResponse = await getResponse(userText);
 
-    // 3️⃣ Convertir respuesta a voz
+    // Convertir respuesta a voz
     const audioFile = await textToSpeech(botResponse);
 
     res.download(audioFile, "response.mp3");
@@ -37,10 +37,10 @@ app.post("/voice-chat", upload.single("audio"), async (req, res) => {
     console.error(error);
     res.status(500).json({ error: "Error procesando la solicitud" });
   }
-});
+});*/
 
-// 🔹 Nuevo endpoint: solo TTS
-app.post("/tts", async (req, res) => {
+// Endpoint TTS
+router.post("/tts", async (req, res) => {
   const { text, voiceId } = req.body;
   if (!text) return res.status(400).json({ error: "El campo 'text' es obligatorio" });
 
@@ -73,8 +73,8 @@ app.post("/tts", async (req, res) => {
 });
 
 
-// 🔹 Nuevo endpoint: solo STT
-app.post("/stt", upload.single("audio"), async (req, res) => {
+// Endpoint STT
+router.post("/stt", upload.single("audio"), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: "Se requiere archivo de audio" });
 
   try {
@@ -87,11 +87,7 @@ app.post("/stt", upload.single("audio"), async (req, res) => {
 });
 
 
-app.use("/", testOpenRouterRoutes);
+// Iniciar el servidor para pruebas
+router.listen(PORT, () => console.log(`Servidor corriendo en http://localhost:${PORT}`));
 
-
-
-app.use(express.json());
-app.use("/api", testOpenRouterRoutes);
-
-app.listen(PORT, () => console.log(`Servidor corriendo en http://localhost:${PORT}`));
+module.exports = router;

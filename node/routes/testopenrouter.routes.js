@@ -1,0 +1,36 @@
+// routes/testopenrouter.routes.js
+import express from "express";
+import axios from "axios";
+
+const router = express.Router();
+
+// endpoint para IA de OpenRouter
+router.get("/test-openrouter", async (req, res) => {
+  try {
+    const response = await axios.post(
+      "https://openrouter.ai/api/v1/chat/completions",
+      {
+        model: "openai/gpt-4o",
+        messages: [
+          { role: "user", content: "dame un hola mundo en java" }
+        ],
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    // Extraemos la respuesta del asistente
+    const botMessage = response.data.choices?.[0]?.message?.content || "No hay respuesta";
+
+    res.json({ botMessage, raw: response.data });
+  } catch (err) {
+    console.error("Error probando OpenRouter:", err.response?.data || err.message);
+    res.status(500).json({ error: "Error en OpenRouter", details: err.response?.data || err.message });
+  }
+});
+
+export default router;
