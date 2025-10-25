@@ -2,7 +2,7 @@ const UsuarioService = require('../services/usuario.service');
 const jwt = require('jsonwebtoken');
 const verificacionEmail = require('../services/email.service');
 const { v4: uuidv4 } = require('uuid');
-const { config } = require('../config/config');
+const { config } = require('../config/config.js');
 
 //Servicio para verificar la fortaleza de la contraseña
 const zxcvbn = require('zxcvbn');
@@ -12,11 +12,11 @@ const service = new UsuarioService();
 class UsuarioController {
   async create(req, res, next) {
     try {
-      const { id_empresa } = req.user.id_empresa;
-      const { id_empresa: _, ...usuario } = req.body;
-      const result = await service.create({ ...usuario, id_empresa });
+      const body = req.body;
+      const result = await service.create(body);
       res.status(201).json(result);
     } catch (error) {
+            console.log(req.body, "\n\nºn\n\n\n\n")
       next(error);
     }
   }
@@ -112,10 +112,8 @@ class UsuarioController {
       }
       const usuario = req.user;
       // Buscamos el rol
-      const role = await service.findRole(usuario.id_rol);
       const payload = {
         sub: usuario.id_usuario,
-        role: role.rol,
         id_empresa: usuario.id_empresa
       };
       const token = jwt.sign(payload, config.jwtSecret);
@@ -137,7 +135,7 @@ class UsuarioController {
   //Funcion para registrar un usuario
   async registerUser(req, res, next) {
     try {
-      const { correo, contrasena, nombre, rfc, telefono } = req.body;
+      const { correo, contrasena, nombre, rfc, telefono, id_cliente } = req.body;
 
       //Verificar si el correo ya existe
       const existingUser = await service.findEmail(correo);//CREAR OTRO FINEMAIL QUE NO SEA EL DE ARRIBA
@@ -171,7 +169,8 @@ class UsuarioController {
 
         nombre,
         rfc,
-        telefono
+        telefono,
+        id_cliente
       });
 
       //Enviar email de verificacion

@@ -98,29 +98,18 @@ class UsuarioService {
   }
 
   async registerUser(usuario) {
-    const empresa_info = {
-      nombre: usuario.nombre || 'Empresa',
-      telefono: usuario.telefono || '0000000000',
-      email: usuario.correo,
-      rfc: usuario.rfc || '000000000000'
-    };
-
-    const empresa = await models.Empresa.create(empresa_info);
-
-    usuario = {
-      ...usuario,
-      id_empresa: empresa.id_empresa,
-      id_rol: 2,
-      id_suscripcion: 1
-    };
-
-    const newUser = await this.create(usuario);
+    try {
+          const newUser = await this.create(usuario);
     if (!newUser) {
       await empresa.destroy();
       throw boom.badRequest('Error al registrar el usuario');
     }
 
     return newUser;
+    } catch (error) {
+      console.error(error)
+    }
+
   }
 
   // Verificar contraseña al iniciar sesión

@@ -67,46 +67,17 @@ const UsuarioSchema = {
           allowNull: true
       },
 
-  //Llaves foraneas
+  id_cliente: {
+    allowNull: false,
+    type: DataTypes.STRING,
+    unique: true,
 
-  id_empresa: {
-    type: DataTypes.INTEGER,
-    allowNull: false,
-    field: 'id_empresa',
-    references: {
-      model: EMPRESA_VARIABLE,
-      key: 'id_empresa'
-    }
-  },
-  
-  id_rol: {
-    type: DataTypes.INTEGER,
-    allowNull: false,
-    field: 'id_rol',
-    references: {
-      model: ROLES_TABLE,
-      key: 'id_rol'
-    }
-  },
-
-  id_suscripcion: {
-    type: DataTypes.INTEGER,
-    allowNull: false,
-    field: 'id_suscripcion',
-    references: {
-      model: SUSCRIPCION_VARIABLE,
-      key: 'id_suscripcion'
-    }
   }
 
 }
 
 class Usuario extends Model {
   static associate(models) {
-    this.hasMany(models.Usuario, { as: 'Empresa', foreignKey: 'id_empresa' });
-    this.hasMany(models.Usuario, { as: 'Roles', foreignKey: 'id_rol' });
-    this.hasMany(models.Usuario, { as: 'Suscripcion', foreignKey: 'id_suscripcion' });
-
   }
 
   static config(sequelize) {
