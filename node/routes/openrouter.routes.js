@@ -12,7 +12,7 @@ router.get("/", async (req, res) => {
       {
         model: "openai/gpt-4o",
         messages: [
-          { role: "user", content: "dame un hola mundo en java" }
+          { role: "user", content: "qb chotaa sos" }
         ],
       },
       {
@@ -32,5 +32,9 @@ router.get("/", async (req, res) => {
     res.status(500).json({ error: "Error en OpenRouter", details: err.response?.data || err.message });
   }
 });
+
+
+
+
 
 module.exports = router;
