@@ -15,7 +15,7 @@ services:
 
   phpmyadmin:
     image: phpmyadmin/phpmyadmin:latest
-    container_name: phpmyadmin
+    container_name: phpmyadminhackmty
     restart: always
     environment:
       PMA_HOST: db
