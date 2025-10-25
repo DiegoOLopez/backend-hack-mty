@@ -1,11 +1,11 @@
-// routes/testopenrouter.routes.js
-import express from "express";
-import axios from "axios";
+const express = require('express');
 
 const router = express.Router();
+const axios = require('axios');
+
 
 // endpoint para IA de OpenRouter
-router.get("/test-openrouter", async (req, res) => {
+router.get("/", async (req, res) => {
   try {
     const response = await axios.post(
       "https://openrouter.ai/api/v1/chat/completions",
@@ -33,4 +33,4 @@ router.get("/test-openrouter", async (req, res) => {
   }
 });
 
-export default router;
+module.exports = router;
