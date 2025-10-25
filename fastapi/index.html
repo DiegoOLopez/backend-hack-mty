@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Detección de Emociones</title>
+</head>
+<body>
+    <h1>Detección de Emociones con Cámara</h1>
+
+    <video id="video" width="400" height="300" autoplay></video>
+    <button id="capture">Capturar y Analizar</button>
+    <canvas id="canvas" width="400" height="300" style="display:none;"></canvas>
+
+    <h2>Resultado:</h2>
+    <pre id="result">Esperando captura...</pre>
+
+    <script>
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const captureBtn = document.getElementById('capture');
+        const resultEl = document.getElementById('result');
+
+        // Acceder a la cámara
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(stream => { video.srcObject = stream; })
+            .catch(err => { console.error("Error accediendo a la cámara:", err); });
+
+        captureBtn.addEventListener('click', async () => {
+            // Capturar fotograma
+            const context = canvas.getContext('2d');
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            // Convertir a blob
+            canvas.toBlob(async (blob) => {
+                const formData = new FormData();
+                formData.append('file', blob, 'capture.jpg');
+
+                try {
+                    const response = await fetch('/analyze', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    const data = await response.json();
+                    resultEl.textContent = JSON.stringify(data, null, 2);
+                } catch (err) {
+                    resultEl.textContent = "Error: " + err;
+                }
+            }, 'image/jpeg', 0.9);
+        });
+    </script>
+</body>
+</html>
