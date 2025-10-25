@@ -186,6 +186,69 @@ if (responseJSON.status === "Done") {
   }
 });
 
+// Endpoint combinado: voz -> texto -> OpenRouter -> voz
+const multer = require("multer");
+const fs = require("fs");
+const upload = multer({ dest: "uploads/" });
+
+const { speechToText } = require("../services/elevenlabs.service.js");
+const { getResponse } = require("../services/openrouter.service.js");
+const { ElevenLabsClient } = require("@elevenlabs/elevenlabs-js");
+
+const elevenlabs = new ElevenLabsClient({
+  apiKey: process.env.ELEVENLABS_API_KEY,
+});
+
+router.post("/voice-chat", upload.single("audio"), async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ error: "Se requiere archivo de audio" });
+  }
+
+  try {
+    // Transcribir voz a texto (STT)
+    const userText = await speechToText(req.file.path);
+    console.log("Usuario dijo:", userText);
+
+    // Obtener respuesta de OpenRouter
+    const botResponse = await service.getCompletion(userText);
+    console.log("OpenRouter respondió:", botResponse);
+
+    // Convertir respuesta de texto a voz (TTS)
+    const audioStream = await elevenlabs.textToSpeech.convert(
+      "JBFqnCBsd6RMkjVDRZzb", // ID de voz — puedes cambiarlo por otra
+      {
+        text: botResponse,
+        modelId: "eleven_multilingual_v2",
+        outputFormat: "mp3_44100_128",
+      }
+    );
+
+    // Convertir stream a buffer
+    const chunks = [];
+    for await (const chunk of audioStream) {
+      chunks.push(chunk);
+    }
+    const audioBuffer = Buffer.concat(chunks);
+
+    // Enviar respuesta como archivo de audio
+    res.set({
+      "Content-Type": "audio/mpeg",
+      "Content-Length": audioBuffer.length,
+    });
+    res.send(audioBuffer);
+  } catch (error) {
+    console.error("Error en /voice-chat:", error);
+    res.status(500).json({ error: "Error procesando la conversación" });
+  } finally {
+    //  Eliminar archivo temporal
+    try {
+      fs.unlinkSync(req.file.path);
+    } catch (e) {
+      console.warn("No se pudo eliminar archivo temporal:", e.message);
+    }
+  }
+});
+
 
 
 
