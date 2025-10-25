@@ -123,7 +123,7 @@ if (responseJSON.status === "Done") {
   }
 });
 
-// ✅ Endpoint combinado: voz -> texto -> OpenRouter -> voz
+// Endpoint combinado: voz -> texto -> OpenRouter -> voz
 const multer = require("multer");
 const fs = require("fs");
 const upload = multer({ dest: "uploads/" });
