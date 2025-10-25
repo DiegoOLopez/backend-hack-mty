@@ -44,13 +44,11 @@ router.get("/", async (req, res) => {
 
 router.post("/",validacionJWT, async (req, res) => {
   const { message } = req.body;
-  console.log(req.user, "asiodpjfaosidjfasdoifjaoifaosidjf")
   // Obtenemos la ultima conversacio
 const last_conversacion = await models.Conversacion.findOne({
   where: { usuario_id: req.user.sub },
   order: [['id', 'DESC']]
 });
-console.log(last_conversacion)
   let id_conversacion;
   if (!last_conversacion || last_conversacion.status == 'Done'){
       const response = await models.Conversacion.create({
@@ -64,7 +62,6 @@ console.log(last_conversacion)
   } else {
     id_conversacion = last_conversacion.id
   }
-  console.log(id_conversacion, "asdokfasdpofkaspdokfpaosdkfopas")
   // Guardamos el mensaje del usuario
   await models.Mensaje.create({
     remitente: 'Usuario',
@@ -76,7 +73,7 @@ console.log(last_conversacion)
   res.setHeader("Content-Type", "text/event-stream");
   res.setHeader("Cache-Control", "no-cache");
   res.setHeader("Connection", "keep-alive");
-
+/** 
   try {
     let botResponse = ""; // acumulador de todo lo que envía el bot
     for await (const chunk of service.streamCompletion(message)) {
@@ -90,7 +87,35 @@ console.log(last_conversacion)
     conversacion_id: id_conversacion
   });
     res.write("event: done\ndata: [DONE]\n\n");
-  } catch (err) {
+  }*/
+ try {
+  // Llamada normal que devuelve la respuesta completa
+  const botResponse = await service.getCompletion(message); // ya no streamCompletion
+ const responseJSON = JSON.parse(botResponse);
+  // Guardamos la respuesta en la base de datos
+  await models.Mensaje.create({
+    remitente: 'model',
+    contenido: responseJSON.message,
+    fecha_envio: Date.now(),
+    conversacion_id: id_conversacion
+  });
+if (responseJSON.status === "Done") {
+  const conversacion = await models.Conversacion.findByPk(id_conversacion);
+  
+  if (conversacion) {
+    await conversacion.update({
+      status: responseJSON.status
+    });
+  }
+}
+
+
+
+
+  // Enviamos la respuesta al cliente
+  res.write(responseJSON.message);
+  res.end();
+} catch (err) {
     console.error("Error:", err.message);
     res.write(`data: Error: ${err.message}\n\n`);
   } finally {
