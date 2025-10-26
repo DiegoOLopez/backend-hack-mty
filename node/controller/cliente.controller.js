@@ -3,17 +3,7 @@ const ClienteService = require('../services/cliente.service');
 const service = new ClienteService();
 
 class ClienteController {
-    // Obtener todos los profesores
-    async findAll(req, res, next) {
-        try {
-            const { id_empresa } = req.user;
-            const allprofesores = await service.findAll(id_empresa);
-            res.json(allprofesores);
-        } catch (error) {
-            console.error(error);
-            next(error);
-        }
-    }
+
 
     // Obtener el cliente por ID
     // ID de cliente prueba
@@ -32,62 +22,19 @@ class ClienteController {
         }
     }
 
-    // Crear un profesor (create)
     async create(req, res, next) {
         try {
-            const { id_empresa } = req.user;
-            const { id_empresa: _, ...body } = req.body; // Elimina cualquier id_empresa enviado por el usuario
-            const result = await service.create({ ...body, id_empresa });
-            res.json(result);
-        } catch (error) {
-            console.error(error);
-            next(error);
-        }
-    }
-
-    // Actualizar un profesor (update)
-    async update(req, res, next) {
-        try {
-            const { id_profesor } = req.params;
-            const { id_empresa } = req.user;
-            const { id_empresa: _, ...body } = req.body; // Elimina cualquier id_empresa enviado por el usuario
-            const result = await service.updateByID(id_profesor, { ...body, id_empresa });
-            if (!result) {
-                return res.status(404).json({ message: 'Profesor no encontrado' });
+            const { id_cliente } = req.user;
+            const body = req.body
+            // Generar numero aleatorio de 16 digitos
+            const result = await service.create(body, id_cliente)
+            if (!result){
+                return res.status(404).json({ message: 'Error al crear cliente'});
             }
-            return res.json(result + ' Profesor actualizado');
+            return res.json(result)
         } catch (error) {
-            console.error(error);
-            next(error);
-        }
-    }
-
-    // Eliminar un profesor (delete)
-    async delete(req, res, next) {
-        try {
-            const { id_profesor } = req.params;
-            const { id_empresa } = req.user;
-            const result = await service.deleteByID(id_profesor, id_empresa);
-            if (!result) {
-                return res.status(404).json({ message: 'Profesor no encontrado' });
-            }
-            return res.json(result + ' Profesor eliminado');
-        } catch (error) {
-            console.error(error);
-            next(error);
-        }
-    }
-
-    // Obtener todos los alumnos de un profesor
-    async findAllAlumnos(req, res, next) {
-        try {
-            const { id_profesor } = req.params;
-            const { id_empresa } = req.user;
-            const result = await service.findAlumnos(id_profesor, id_empresa);
-            res.json(result);
-        } catch (error) {
-            console.error(error);
-            next(error);
+            console.error(error)
+            next(error)
         }
     }
 }

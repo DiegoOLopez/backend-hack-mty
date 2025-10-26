@@ -7,17 +7,11 @@ const ClienteController = require('../controller/cliente.controller');
 const {validacionJWT, verificarRol }= require('./validacionJWT');
 
 
-// Obtener datos de todos los clientes
-router.get('/', validacionJWT, verificarRol(['superadmin', 'admin', 'moderador']), (req, res, next) => ClienteController.findAll(req, res, next));
 // Obtener datos de un cliente por id
 //router.get('/:id_cliente', validacionJWT, verificarRol(['superadmin', 'admin', 'moderador']), (req, res, next) => ClienteController.findById(req, res, next));
-router.get('/:id_cliente', (req, res, next) => ClienteController.findById(req, res, next));
+router.get('/:id_cliente', validacionJWT, (req, res, next) => ClienteController.findById(req, res, next));
 // Crear un nuevo cliente
-router.post('/', validacionJWT, verificarRol(['superadmin', 'admin', 'moderador']), (req, res, next) => ClienteController.create(req, res, next));
-// Actualizar un cliente por id
-router.patch('/:id_cliente', validacionJWT, verificarRol(['superadmin', 'admin', 'moderador']) ,  (req, res, next) => ClienteController.update(req, res, next));
-// Eliminar un cliente por id
-router.delete('/:id_cliente', validacionJWT , verificarRol(['superadmin', 'admin']) , (req, res, next) => ClienteController.delete(req, res, next));
+router.post('/', validacionJWT, (req, res, next) => ClienteController.create(req, res, next));
 
 
 

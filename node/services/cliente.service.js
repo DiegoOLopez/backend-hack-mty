@@ -2,18 +2,6 @@ const { models } = require('../libs/sequelize');
 const axios = require('axios');
 
 class ClienteService {
-    // Funcion para buscar todos los estudiantes (findAll)
-    async findAll(id_empresa){
-        const alumnos = await models.Alumno.findAll({
-            where: {
-                id_empresa: id_empresa
-            }
-        });
-        return alumnos;
-    }
-
-    // Funcion para buscar un estudiante por su id (findVyPk)
-
 
     async findById(id) {
     try {
@@ -29,59 +17,39 @@ class ClienteService {
     }
     }
 
-    // Funcion para crear un estudiante (create)
-    async create(alumno){
-        const dataAlumno = {
-            ...alumno,
-            telefono2: alumno.telefono2 || alumno.telefono1
-        }
-        const alumnocreated = await models.Alumno.create(dataAlumno);
-        return alumnocreated;
+    async create(body, id_cliente) {
+  try {
+    const url = `http://api.nessieisreal.com/customers/${id_cliente}/accounts?key=b9c71161ea6125345750dcb92f0df27c`;
+    // Llamamos a las cuentas existentes
+    const { data: cuentas } = await axios.get(
+        `http://api.nessieisreal.com/accounts?key=b9c71161ea6125345750dcb92f0df27c`
+    );
+
+    let numeroCuenta;
+    let valido = false;
+
+    while (!valido) {
+        // Generamos número aleatorio de 16 dígitos
+        numeroCuenta = Math.floor(1000000000000000 + Math.random() * 9000000000000000).toString();
+
+        // Verificamos si ya existe
+        const existe = cuentas.some((c) => c.account_number === numeroCuenta);
+        if (!existe) valido = true;
     }
 
-    // Funcion para actualizar un estudiante (update)
-    async updateById(id, alumno){
-        const alumnoUpdated = await models.Alumno.findOne({
-            where: {
-                id_alumno: id,
-                id_empresa: alumno.id_empresa
-            }
-        });
-        if(!alumnoUpdated){
-            return null;
-        }
-        const result = await alumnoUpdated.update(alumno);
-        return result
+    body = {
+        ...body,
+        account_number: numeroCuenta
     }
+    const response = await axios.post(url, body);
 
-    // Funcion para eliminar un estudiante (destroy)
-    async deleteById(id, id_empresa){
-        const alumno = await models.Alumno.findOne({
-            where: {
-                id_alumno: id,
-                id_empresa: id_empresa
-            }
-        });
-        const result = await alumno.destroy();
-        return result;
-    }
+    return response.data; // 👈 Devuelve directamente los datos útiles
+  } catch (error) {
+    console.error('Error creando la cuenta:', error.response?.data || error.message);
+    return null;
+  }
+}
 
-    // Funcion para buscar un tutor por id alumno
-    async findTutor(id_alumno, id_empresa){
-        const alumno = await models.Alumno.findOne({
-            where: {
-                id_alumno: id_alumno,
-                id_empresa: id_empresa
-            }
-        });
-        const tutor = await models.Tutor.findOne({
-            where: {
-                id_tutor: alumno.id_tutor,
-                id_empresa: id_empresa
-            }
-        });
-        return { alumno, tutor };
-    }
 }
 
 module.exports = ClienteService;
