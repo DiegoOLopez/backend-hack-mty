@@ -78,7 +78,7 @@ const last_conversacion = await models.Conversacion.findOne({
 // Registros de usuario
 
 //const cuentas_propias = (await axios.get(`http://api.nessieisreal.com/customers/${req.user.id_cliente}/accounts?key=b9c71161ea6125345750dcb92f0df27c`)).data;
-const cuentas_propias = (await axios.get(`http://localhost:3001/customers/68fc4df19683f20dd51a3f39/accounts`)).data;
+const cuentas_propias = (await axios.get(`http:/mockdb-production.up.railway.app/customers/68fc4df19683f20dd51a3f39/accounts`)).data;
 console.log("Cuentas propias", cuentas_propias)
 const contactos_usuario = await models.Contacto.findAll()
 
@@ -333,7 +333,7 @@ Toda respuesta debe ser **JSON válido** y ajustarse exactamente a la estructura
       /**  Se da de alta contacto */
       if (botResponse.accion === "alta_contacto"){
         //const cuentas = (await axios.get("http://api.nessieisreal.com/accounts?key=b9c71161ea6125345750dcb92f0df27c")).data;
-        const cuentas = (await axios.get("http://localhost:3001/accounts")).data
+        const cuentas = (await axios.get("http:/mockdb-production.up.railway.app/accounts")).data
         console.log("Se impprimen cuentas en total", cuentas)
         for (let i = 0; i < cuentas.length; i++){
           if (cuentas[i].account_number == botResponse.detalle.numero_de_cuenta){
@@ -347,7 +347,7 @@ Toda respuesta debe ser **JSON válido** y ajustarse exactamente a la estructura
         }
       } else if (botResponse.accion === "transferencia"){
          //const cuentas = (await axios.get("http://api.nessieisreal.com/accounts?key=b9c71161ea6125345750dcb92f0df27c")).data;
-          const cuentas = (await axios.get("http://localhost:3001/accounts")).data
+          const cuentas = (await axios.get("http:/mockdb-production.up.railway.app/accounts")).data
          const contactos = await models.Contacto.findAll();
          for (let i = 0; i < cuentas.length; i++){
           // Encontramos la cuenta del usuario que envia
@@ -437,7 +437,7 @@ router.post("/voice-chat", validacionJWT, upload.single("audio"), async (req, re
    // Registros de usuario
 
 //const cuentas_propias = (await axios.get(`http://api.nessieisreal.com/customers/${req.user.id_cliente}/accounts?key=b9c71161ea6125345750dcb92f0df27c`)).data;
-const cuentas_propias = (await axios.get(`http://localhost:3001/customers/${req.user.id_cliente}/accounts`)).data;
+const cuentas_propias = (await axios.get(`http:/mockdb-production.up.railway.app/customers/${req.user.id_cliente}/accounts`)).data;
 console.log("Cuentas propias", cuentas_propias)
 const contactos_usuario = await models.Contacto.findAll()
 
@@ -672,7 +672,7 @@ Toda respuesta debe ser **JSON válido** y ajustarse exactamente a la estructura
     if (botResponse.status === "done" && botResponse.decision === "listo") {
       if (botResponse.accion === "alta_contacto") {
         //const cuentas = (await axios.get("http://api.nessieisreal.com/accounts?key=b9c71161ea6125345750dcb92f0df27c")).data;
-        const cuentas = (await axios.get("http://localhost:3001/accounts")).data
+        const cuentas = (await axios.get("mock_db.railway.internal/accounts")).data
         for (let i = 0; i < cuentas.length; i++) {
           if (cuentas[i].account_number == botResponse.detalle.numero_de_cuenta) {
             await models.Contacto.create({

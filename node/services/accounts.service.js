@@ -20,7 +20,7 @@ class AccountService {
         //const response = await axios.get(`http://api.nessieisreal.com/customers/${id}`, {
         //params: { key: 'b9c71161ea6125345750dcb92f0df27c' }
         //});
-        const response = (await axios.get(`http://localhost:3001/customers/${id}`)).data;
+        const response = (await axios.get(`http:/mockdb-production.up.railway.app/customers/${id}`)).data;
         
         // El cliente viene directamente en response.data
         return response.data;
@@ -101,7 +101,7 @@ class AccountService {
       //  `http://api.nessieisreal.com/customers/${id_cliente}/accounts`,
       //  { params: { key: 'b9c71161ea6125345750dcb92f0df27c' } }
       //);
-      const response = (await axios.get(`http://localhost:3001/customers/${req.user.id_cliente}/accounts`)).data;
+      const response = (await axios.get(`http:/mockdb-production.up.railway.app/customers/${req.user.id_cliente}/accounts`)).data;
       console.log("Cuentas propias", cuentas_propias)
 
       // Las cuentas vienen en response.data

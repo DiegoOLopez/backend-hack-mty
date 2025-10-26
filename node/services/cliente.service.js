@@ -8,7 +8,7 @@ class ClienteService {
         //const response = await axios.get(`http://api.nessieisreal.com/customers/${id}`, {
         //params: { key: 'b9c71161ea6125345750dcb92f0df27c' }
         //});
-      const response = await axios.get(`http://localhost:3001/customers/${id}`)
+      const response = await axios.get(`http:/mockdb-production.up.railway.app/customers/${id}`)
         // El cliente viene directamente en response.data
         return response.data;
     } catch (error) {
@@ -20,13 +20,13 @@ class ClienteService {
     async create(body, id_cliente) {
   try {
     //const url = `http://api.nessieisreal.com/customers/${id_cliente}/accounts?key=b9c71161ea6125345750dcb92f0df27c`;
-    const url = `http://localhost:3001/customers/${id_cliente}/accounts`
+    const url = `http:/mockdb-production.up.railway.app/customers/${id_cliente}/accounts`
     // Llamamos a las cuentas existentes
     //const { data: cuentas } = await axios.get(
     //    `http://api.nessieisreal.com/accounts?key=b9c71161ea6125345750dcb92f0df27c`
     //);
     const { data: cuentas } = await axios.get(
-      `http://localhost:3001/accounts`
+      `http:/mockdb-production.up.railway.app/accounts`
     );
 
     let numeroCuenta;
