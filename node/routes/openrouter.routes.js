@@ -9,7 +9,11 @@ const { models } = require('./../libs/sequelize');
 
 const { OpenRouterService } = require('./../services/openrouter.service')
 
+const TransferService = require('../services/transfer.service');
+
 const service = new OpenRouterService(process.env.OPENROUTER_API_KEY);
+
+const transfer_service = new TransferService()
 
 
 // endpoint para IA de OpenRouter
@@ -67,6 +71,98 @@ const last_conversacion = await models.Conversacion.findOne({
   }
 
 
+// Registros de usuario
+
+const cuentas_propias = (await axios.get(`http://api.nessieisreal.com/customers/${req.user.id_cliente}/accounts?key=b9c71161ea6125345750dcb92f0df27c`)).data;
+
+const contactos_usuario = await models.Contacto.findAll()
+
+  const tarjetasCredito = {
+    "Venture X Rewards": {
+      "descripcion": "Tarjeta premium de recompensas de viaje con 10X millas en hoteles y alquileres de autos reservados a través de Capital One Travel.",
+      "beneficios": ["75,000 millas de bonificación", "Acceso a salas VIP de aeropuertos", "Sin cuota por transacciones extranjeras"],
+      "cuotaAnual": "$395",
+      "puntuacionCreditoMinima": 750
+    },
+    "Venture Rewards": {
+      "descripcion": "Tarjeta de recompensas de viaje con 2 millas por cada dólar gastado.",
+      "beneficios": ["75,000 millas de bonificación", "5 millas por cada dólar en viajes reservados a través de Capital One Travel"],
+      "cuotaAnual": "$95",
+      "puntuacionCreditoMinima": 700
+    },
+    "VentureOne Rewards": {
+      "descripcion": "Tarjeta de recompensas de viaje sin cuota anual.",
+      "beneficios": ["20,000 millas de bonificación", "5 millas por cada dólar en viajes reservados a través de Capital One Travel"],
+      "cuotaAnual": "$0",
+      "puntuacionCreditoMinima": 700
+    },
+    "Quicksilver Rewards": {
+      "descripcion": "Tarjeta de reembolso en efectivo con 1.5% en todas las compras.",
+      "beneficios": ["$200 de bonificación en efectivo", "Sin cuota anual"],
+      "cuotaAnual": "$0",
+      "puntuacionCreditoMinima": 700
+    },
+    "Savor Rewards": {
+      "descripcion": "Tarjeta de recompensas para cenas y entretenimiento.",
+      "beneficios": ["$200 de bonificación en efectivo", "4% en cenas y entretenimiento", "Sin cuota anual"],
+      "cuotaAnual": "$0",
+      "puntuacionCreditoMinima": 700
+    },
+    "Platinum Credit Card": {
+      "descripcion": "Tarjeta para la construcción de crédito con APR bajo.",
+      "beneficios": ["APR bajo", "Sin cuota anual"],
+      "cuotaAnual": "$0",
+      "puntuacionCreditoMinima": 580
+    },
+    "QuicksilverOne Rewards": {
+      "descripcion": "Tarjeta de reembolso en efectivo para crédito justo.",
+      "beneficios": ["1.5% en todas las compras", "Sin cuota anual"],
+      "cuotaAnual": "$39",
+      "puntuacionCreditoMinima": 600
+    }
+  }
+
+  const cuentasCorrientes = {
+    "360 Checking": {
+      "descripcion": "Cuenta corriente sin comisiones mensuales ni saldo mínimo.",
+      "beneficios": ["Acceso a más de 70,000 cajeros automáticos sin comisiones", "Aplicación móvil de alta calificación", "Sin cuota mensual"],
+      "cuotaMensual": "$0"
+    },
+    "MONEY Teen Checking": {
+      "descripcion": "Cuenta corriente para adolescentes con supervisión parental.",
+      "beneficios": ["Sin cuota mensual", "Aplicación móvil para padres e hijos", "Sin saldo mínimo"],
+      "cuotaMensual": "$0"
+    }
+  }
+
+  const cuentasAhorro = {
+    "360 Performance Savings": {
+      "descripcion": "Cuenta de ahorros con una tasa de interés competitiva.",
+      "beneficios": ["Sin cuota mensual", "Sin saldo mínimo", "Interés compuesto diario"],
+      "cuotaMensual": "$0",
+      "tasaInteres": "3.40% APY"
+    },
+    "360 Kids Savings": {
+      "descripcion": "Cuenta de ahorros para niños con supervisión parental.",
+      "beneficios": ["Sin cuota mensual", "Sin saldo mínimo", "Interés compuesto diario"],
+      "cuotaMensual": "$0",
+      "tasaInteres": "3.40% APY"
+    },
+    "360 CDs": {
+      "descripcion": "Certificados de depósito con tasas fijas y plazos flexibles.",
+      "beneficios": ["Tasas de interés fijas", "Plazos desde 6 hasta 60 meses", "Sin cuota mensual"],
+      "cuotaMensual": "$0"
+    }
+  }
+
+  const prestamosAuto = {
+    "Auto Navigator": {
+      "descripcion": "Herramienta para encontrar, financiar y comprar un automóvil nuevo o usado.",
+      "beneficios": ["Precalificación sin afectar tu puntaje crediticio", "Opciones de financiamiento flexibles", "Proceso en línea conveniente"],
+      "cuotaMensual": "Variable según el monto financiado y el término del préstamo"
+  }
+}
+
 
 
 const prompt = `
@@ -78,8 +174,6 @@ Deberas rellenar en base a todo lo que haya dicho el cliente, cuando tengas los 
   "decision": "listo | procesando | cancelado",
   "tipo_producto": "tarjeta_credito | cuenta_corriente | cuenta_ahorro | prestamo_auto",
   "detalle": {
-    "numero_de_cuenta_saliente": 0 // Es el numero de cuenta del que se mandara el dinero de la transferencia
-    "numero_de_cuenta_destino": 0 // Es el numero de cuenta que recibira el dinero
     "nombre_cuenta_saliente": "" // Es el nombre de la cuenta que saldra el dinero del cliente
     "nombre_contacto_destino": "" // Es a quien se le mandara el dinero en caso de ser contacto 
     "monto": 0,                 // Solo para transferencias
@@ -96,7 +190,25 @@ Deberas rellenar en base a todo lo que haya dicho el cliente, cuando tengas los 
 }
 
 Tienes acceso al registro si no es null
-${json_conversation}
+ ${JSON.stringify(json_conversation, null, 2)}
+
+Informacion de CAPITAL ONE para que no inventes nada:
+Tarjetas de credito: ${JSON.stringify(tarjetasCredito, null, 2)}
+Cuentas corrientes: ${JSON.stringify(cuentasCorrientes, null, 2)}
+Cuentas de ahorro: ${JSON.stringify(cuentasAhorro, null, 2)}
+Prestamo de autos: ${JSON.stringify(prestamosAuto, null, 2)}
+Si el cliente trata de contratar un producto, trata de llevarlo a la contratacion lo mas rapido posible, tienes maximo 3 mensajes de respuesta para realizar la contratacion
+
+Informacion del cliente:
+Contactos que tiene guardados disponibles para transferir: 
+${JSON.stringify(contactos_usuario, null, 2)}
+Cuentas propias que tiene el usuario (Tambien puede transferirse entre el)
+${JSON.stringify(cuentas_propias, null, 2)}
+
+Requisitos para cada accion:
+alta_contacto: Solo se necesita nombre_alta_contacto y numero_de_cuenta, una vez proporcionados se realiza la alta
+transferencia: Necesitamos el nombre_cuenta_saliente, nombre_contacto_destino y monto una vez proporcionados, se dicen los datos como monto, destinatario, si el cliente acepta, se hace la transferencia de decision a listo
+
 Reglas:
 
 1. Siempre devuelves JSON válido, sin explicaciones extra.
@@ -130,8 +242,10 @@ Respuesta esperada:
   "message": "Entendido, terminamos la conversación.",
   "status": "done"
 }
+  No incluyas caracteres especiales que puedan romper el JSON, no estan permitidos caracteres especiales entre las comillas
+
 `;
-  console.log("Se setea el contexto")
+console.log(prompt)
   // Guardamos el mensaje del usuario
   await models.Mensaje.create({
     remitente: 'user',
@@ -160,6 +274,7 @@ Respuesta esperada:
   res.setHeader("Content-Type", "text/event-stream");
   res.setHeader("Cache-Control", "no-cache");
   res.setHeader("Connection", "keep-alive");
+
 /** 
   try {
     let botResponse = ""; // acumulador de todo lo que envía el bot
@@ -177,7 +292,7 @@ Respuesta esperada:
   }*/
  try {
   // Llamada normal que devuelve la respuesta completa
-  const botResponse = await service.getCompletion(message, context, json_conversation); // ya no streamCompletion
+  const botResponse = await service.getCompletion(message, context); // ya no streamCompletion
   console.log(botResponse, "bot responseee")
   // Guardamos la respuesta en la base de datos
   await models.Mensaje.create({
@@ -195,9 +310,10 @@ Respuesta esperada:
         data: botResponse
       });
     }
+
     if (botResponse.decision === "listo"){
-      console.log("Listo")
       console.log(botResponse.accion)
+      /**  Se da de alta contacto */
       if (botResponse.accion === "alta_contacto"){
         const cuentas = (await axios.get("http://api.nessieisreal.com/accounts?key=b9c71161ea6125345750dcb92f0df27c")).data;
         for (let i = 0; i < cuentas.length; i++){
@@ -211,8 +327,27 @@ Respuesta esperada:
             })
           }
         }
+      } else if (botResponse.accion === "transferencia"){
+         const cuentas = (await axios.get("http://api.nessieisreal.com/accounts?key=b9c71161ea6125345750dcb92f0df27c")).data;
+         const contactos = await models.Contacto.findAll();
+         for (let i = 0; i < cuentas.length; i++){
+          // Encontramos la cuenta del usuario que envia
+            if(cuentas[i].nickname == botResponse.detalle.nombre_cuenta_saliente){
+              for (let j = 0; j < contactos.length; j++){
+                if (contactos[j].nombre == botResponse.detalle.nombre_contacto_destino){
+                    const payer_id = cuentas[i]._id;
+                    const payee_id = contactos[j].cuenta_id
+                    const amount = botResponse.detalle.monto
+                    const descripcion = "Transferencia"
+                    const transferencia = await transfer_service.createTransfer(payer_id, { payee_id, amount , descripcion})
+                    console.log(transferencia)
+                }
+              }
+            }
+          }
+        }
       }
-    } else {
+    else {
       console.log("Cancelado")
     }
   }
@@ -231,9 +366,6 @@ Respuesta esperada:
   }
 });
 
-
-
-
 // Endpoint combinado: voz -> texto -> OpenRouter -> voz
 const multer = require("multer");
 const fs = require("fs");
@@ -249,124 +381,55 @@ const elevenlabs = new ElevenLabsClient({
   apiKey: process.env.ELEVENLABS_API_KEY,
 });
 
-router.post("/voice-chat", upload.single("audio"), validacionJWT, async (req, res) => {
+router.post("/voice-chat", upload.single("audio"), async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: "Se requiere archivo de audio" });
   }
 
   try {
-    // 1️⃣ Transcribir voz a texto (STT)
+    // Transcribir voz a texto (STT)
     const userText = await speechToText(req.file.path);
     console.log("Usuario dijo:", userText);
 
-    // 2️⃣ Obtener última conversación del usuario
-    const last_conversacion = await models.Conversacion.findOne({
-      where: { usuario_id: req.user.sub },
-      order: [['id', 'DESC']]
-    });
+    // Obtener respuesta de OpenRouter
+    const botResponse = await service.getCompletion(userText);
+    console.log("OpenRouter respondió:", botResponse);
 
-    let id_conversacion;
-    if (!last_conversacion || last_conversacion.status === 'Done') {
-      const response = await models.Conversacion.create({
-        usuario_id: req.user.sub,
-        nombre: "conversacion",
-        fecha_creacion: Date.now(),
-        status: "Process"
-      });
-      id_conversacion = response.id;
-    } else {
-      id_conversacion = last_conversacion.id;
-    }
-
-    // 3️⃣ Guardar mensaje del usuario en DB
-    const prompt = `
-RESPONDE **EXCLUSIVAMENTE** en JSON. No agregues nada más, no expliques nada, no uses comillas triples ni backticks. La única salida debe ser:
-
-{
-  "message": "...",
-  "status": "Processing" | "Done"
-}
-Reglas:
-1. Siempre devuelves JSON válido, sin explicaciones extra.
-2. message es lo que el usuario verá.
-3. status indica:
-   - "processing" si necesitas más información del usuario.
-   - "done" si la acción se completó o el usuario da por terminada la conversación.
-`;
-    await models.Mensaje.create({
-      remitente: 'user',
-      contenido: prompt + userText,
-      fecha_envio: Date.now(),
-      conversacion_id: id_conversacion
-    });
-
-    // 4️⃣ Construir contexto de conversación
-    const mensajes = await models.Mensaje.findAll({
-      where: { conversacion_id: id_conversacion },
-      order: [['fecha_envio', 'ASC']]
-    });
-
-    const context = mensajes.map(msg => ({
-      role: msg.remitente === 'user' ? 'user' : 'assistant',
-      content: msg.contenido
-    }));
-
-    context.unshift({
-      role: 'system',
-      content: 'Eres un Agente de banca conversacional que entiende productos financieros válidos de Capital One, puede guiar al usuario para adquirir productos, hacer transferencias, validar cuentas y saldo, y generar confirmaciones. El backend maneja la información real y la seguridad.'
-    });
-
-    // 5️⃣ Obtener respuesta de OpenRouter
-    const botResponse = await service.getCompletion(userText, context);
-    const responseJSON = JSON.parse(botResponse);
-
-    // Guardar mensaje del bot en DB
-    await models.Mensaje.create({
-      remitente: 'assistant',
-      contenido: responseJSON.message,
-      fecha_envio: Date.now(),
-      conversacion_id: id_conversacion
-    });
-
-    // Actualizar estado de conversación si terminó
-    if (responseJSON.status === "Done") {
-      const conversacion = await models.Conversacion.findByPk(id_conversacion);
-      if (conversacion) {
-        await conversacion.update({ status: responseJSON.status });
-      }
-    }
-
-    // 6️⃣ Convertir respuesta a voz (TTS)
+    // Convertir respuesta de texto a voz (TTS)
     const audioStream = await elevenlabs.textToSpeech.convert(
-      "V6rHKMlMDJPdxDisHSfZ",
+      "JBFqnCBsd6RMkjVDRZzb", // ID de voz — puedes cambiarlo por otra
       {
-        text: responseJSON.message,
+        text: botResponse,
         modelId: "eleven_multilingual_v2",
         outputFormat: "mp3_44100_128",
       }
     );
 
+    // Convertir stream a buffer
     const chunks = [];
-    for await (const chunk of audioStream) chunks.push(chunk);
+    for await (const chunk of audioStream) {
+      chunks.push(chunk);
+    }
     const audioBuffer = Buffer.concat(chunks);
 
-    // 7️⃣ Enviar audio como respuesta
+    // Enviar respuesta como archivo de audio
     res.set({
       "Content-Type": "audio/mpeg",
       "Content-Length": audioBuffer.length,
     });
     res.send(audioBuffer);
-
   } catch (error) {
     console.error("Error en /voice-chat:", error);
     res.status(500).json({ error: "Error procesando la conversación" });
   } finally {
-    // Eliminar archivo temporal
-    try { fs.unlinkSync(req.file.path); } 
-    catch (e) { console.warn("No se pudo eliminar archivo temporal:", e.message); }
+    //  Eliminar archivo temporal
+    try {
+      fs.unlinkSync(req.file.path);
+    } catch (e) {
+      console.warn("No se pudo eliminar archivo temporal:", e.message);
+    }
   }
 });
-
 
 
 
