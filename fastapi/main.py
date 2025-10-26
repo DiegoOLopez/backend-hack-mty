@@ -13,7 +13,7 @@ app = FastAPI(title="Face & Emotion + Live Recognition API")
 DATA_DIR = "registered_faces"
 os.makedirs(DATA_DIR, exist_ok=True)
 
-# --- 1️⃣ Analizar emociones ---
+# --- Analizar emociones ---
 @app.post("/analyze")
 async def analyze_face(file: UploadFile = File(...)):
     try:
@@ -40,7 +40,7 @@ async def analyze_face(file: UploadFile = File(...)):
         return JSONResponse({"error": str(e)})
 
 
-# --- 2️⃣ Registrar rostro ---
+# --- Registrar rostro ---
 @app.post("/register-face")
 async def register_face(name: str = Form(...), file: UploadFile = File(...)):
     """
@@ -94,7 +94,7 @@ async def recognize_face(file: UploadFile = File(...)):
         return JSONResponse({"error": str(e)})
 
 
-# --- 4️⃣ Interfaz HTML con cámara ---
+# --- Interfaz HTML con cámara ---
 @app.get("/", response_class=HTMLResponse)
 async def index():
     html = """

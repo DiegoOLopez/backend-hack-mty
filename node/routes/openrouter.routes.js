@@ -624,7 +624,7 @@ const prompt = `
       content: 'Eres un Agente de banca conversacional que entiende productos financieros válidos...'
     });
 
-    // 6️⃣ Llamada a OpenRouter
+    // Llamada a OpenRouter
     const botResponse = await service.getCompletion(message, context);
 
     // Guardar respuesta del bot
@@ -635,7 +635,7 @@ const prompt = `
       conversacion_id: id_conversacion
     });
 
-    // 7️⃣ Ejecutar acciones si decision === "listo"
+    // Ejecutar acciones si decision === "listo"
     if (botResponse.status === "done" && botResponse.decision === "listo") {
       if (botResponse.accion === "alta_contacto") {
         const cuentas = (await axios.get("http://api.nessieisreal.com/accounts?key=b9c71161ea6125345750dcb92f0df27c")).data;
