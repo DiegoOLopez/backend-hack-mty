@@ -15,6 +15,10 @@ const service = new OpenRouterService(process.env.OPENROUTER_API_KEY);
 
 const transfer_service = new TransferService()
 
+const ClienteService = require('../services/cliente.service');
+
+const cliente_service = new ClienteService();
+
 
 // endpoint para IA de OpenRouter
 router.get("/", async (req, res) => {
@@ -184,6 +188,8 @@ Deberas rellenar en base a todo lo que haya dicho el cliente, cuando tengas los 
     "contacto_id": null,        // ID interno del contacto si ya existe
     "producto_nombre": "",       // Nombre del producto (ej: Quicksilver Rewards)
     "usuario_id": null           // ID del usuario que solicita la acción
+    "tipo_de_producto_a_contratar": "" // Aqui solo tiene 3 estados ['Credit Card', 'Savings', 'Checking']
+    "nombre_del_producto": "" // Se usara nombres de los productos asignados previamente en la data que te pase
   },
   "status": "processing | done", // processing si falta info, done si la acción se completó
   "mensaje_usuario": ""          // Mensaje que verá el usuario
@@ -345,6 +351,16 @@ console.log(prompt)
               }
             }
           }
+        } else if (botResponse.accion === "contratar_producto"){
+          // Aqui nos encargaremos de manejar el producto que se piense adquirir
+          const body = {
+            "type":  botResponse.detalle.tipo_de_producto_a_contratar,
+            "nickname": botResponse.detalle.nombre_del_producto,
+            "rewards": 0,
+            "balance": 0,
+          } 
+          cliente_service.create(body, req.user.id_cliente);
+          console.log("Producto contratado")
         }
       }
     else {
@@ -520,6 +536,8 @@ const prompt = `
       "contacto_id": null,        // ID interno del contacto si ya existe
       "producto_nombre": "",       // Nombre del producto (ej: Quicksilver Rewards)
       "usuario_id": null           // ID del usuario que solicita la acción
+      "tipo_de_producto_a_contratar": "" // Aqui solo tiene 3 estados ['Credit Card', 'Savings', 'Checking']
+      "nombre_del_producto": "" // Se usara nombres de los productos asignados previamente en la data que te pase
     },
     "status": "processing | done", // processing si falta info, done si la acción se completó
     "mensaje_usuario": ""          // Mensaje que verá el usuario
@@ -647,7 +665,17 @@ const prompt = `
             }
           }
         }
-      }
+      }else if (botResponse.accion === "contratar_producto"){
+          // Aqui nos encargaremos de manejar el producto que se piense adquirir
+          const body = {
+            "type":  botResponse.detalle.tipo_de_producto_a_contratar,
+            "nickname": botResponse.detalle.nombre_del_producto,
+            "rewards": 0,
+            "balance": 0,
+          } 
+          cliente_service.create(body, req.user.id_cliente);
+          console.log("Producto contratado")
+        }
     }
 
     // 8️⃣ Convertir respuesta a voz y enviar
