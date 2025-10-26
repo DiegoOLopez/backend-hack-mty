@@ -77,8 +77,9 @@ const last_conversacion = await models.Conversacion.findOne({
 
 // Registros de usuario
 
-const cuentas_propias = (await axios.get(`http://api.nessieisreal.com/customers/${req.user.id_cliente}/accounts?key=b9c71161ea6125345750dcb92f0df27c`)).data;
-
+//const cuentas_propias = (await axios.get(`http://api.nessieisreal.com/customers/${req.user.id_cliente}/accounts?key=b9c71161ea6125345750dcb92f0df27c`)).data;
+const cuentas_propias = (await axios.get(`http://localhost:3001/customers/68fc4df19683f20dd51a3f39/accounts`)).data;
+console.log("Cuentas propias", cuentas_propias)
 const contactos_usuario = await models.Contacto.findAll()
 
   const tarjetasCredito = {
@@ -251,7 +252,6 @@ Respuesta esperada:
   No incluyas caracteres especiales que puedan romper el JSON, no estan permitidos caracteres especiales entre las comillas
 
 `;
-console.log(prompt)
   // Guardamos el mensaje del usuario
   await models.Mensaje.create({
     remitente: 'user',
@@ -264,19 +264,32 @@ console.log(prompt)
   order: [['fecha_envio', 'ASC']] // orden cronológico
   });
 
-  console.log("Se cargan los mensajes ")
   const context = mensajes.map(msg => ({
   role: msg.remitente === 'user' ? 'user' : 'assistant',
   content: msg.contenido
   }));
 
-  console.log("Se carga el contexto")
 
     context.unshift({
     role: 'system',
-    content: 'Eres un Agente de banca conversacional que entiende productos financieros válidos de Capital One, puede guiar al usuario para adquirir productos, hacer transferencias, validar cuentas y saldo, y generar confirmacionesAgente de banca conversacional que entiende productos financieros válidos de Capital One, puede guiar al usuario para adquirir productos, hacer transferencias, validar cuentas y saldo, y generar confirmaciones, mientras que el backend maneja la información real y la seguridad'
-  });
-  console.log("Se crea el contexto")
+    content:  `
+Eres un agente oficial de banca de **Capital One**. 
+Tu única función es manejar conversaciones de clientes relacionadas con:
+- Transferencias bancarias
+- Altas de contactos
+- Contratación de productos financieros válidos de Capital One (tarjetas, cuentas, préstamos)
+
+❗ No puedes hablar sobre temas fuera del ámbito bancario o de Capital One.
+❗ No puedes inventar productos, políticas, cuentas o nombres de personas.
+❗ Si el usuario habla de temas no bancarios, responde con:
+{
+  "message": "Lo siento, solo puedo ayudarte con servicios de Capital One.",
+  "status": "done"
+}
+
+Toda respuesta debe ser **JSON válido** y ajustarse exactamente a la estructura proporcionada.
+`
+    });
   res.setHeader("Content-Type", "text/event-stream");
   res.setHeader("Cache-Control", "no-cache");
   res.setHeader("Connection", "keep-alive");
@@ -299,7 +312,6 @@ console.log(prompt)
  try {
   // Llamada normal que devuelve la respuesta completa
   const botResponse = await service.getCompletion(message, context); // ya no streamCompletion
-  console.log(botResponse, "bot responseee")
   // Guardamos la respuesta en la base de datos
   await models.Mensaje.create({
     remitente: 'assistant',
@@ -318,12 +330,12 @@ console.log(prompt)
     }
 
     if (botResponse.decision === "listo"){
-      console.log(botResponse.accion)
       /**  Se da de alta contacto */
       if (botResponse.accion === "alta_contacto"){
-        const cuentas = (await axios.get("http://api.nessieisreal.com/accounts?key=b9c71161ea6125345750dcb92f0df27c")).data;
+        //const cuentas = (await axios.get("http://api.nessieisreal.com/accounts?key=b9c71161ea6125345750dcb92f0df27c")).data;
+        const cuentas = (await axios.get("http://localhost:3001/accounts")).data
+        console.log("Se impprimen cuentas en total", cuentas)
         for (let i = 0; i < cuentas.length; i++){
-          console.log(cuentas[i], "====", botResponse.detalle.numero_de_cuenta)
           if (cuentas[i].account_number == botResponse.detalle.numero_de_cuenta){
             models.Contacto.create({
               nombre: botResponse.detalle.nombre_alta_contacto,
@@ -334,7 +346,8 @@ console.log(prompt)
           }
         }
       } else if (botResponse.accion === "transferencia"){
-         const cuentas = (await axios.get("http://api.nessieisreal.com/accounts?key=b9c71161ea6125345750dcb92f0df27c")).data;
+         //const cuentas = (await axios.get("http://api.nessieisreal.com/accounts?key=b9c71161ea6125345750dcb92f0df27c")).data;
+          const cuentas = (await axios.get("http://localhost:3001/accounts")).data
          const contactos = await models.Contacto.findAll();
          for (let i = 0; i < cuentas.length; i++){
           // Encontramos la cuenta del usuario que envia
@@ -346,7 +359,6 @@ console.log(prompt)
                     const amount = botResponse.detalle.monto
                     const descripcion = "Transferencia"
                     const transferencia = await transfer_service.createTransfer(payer_id, { payee_id, amount , descripcion})
-                    console.log(transferencia)
                 }
               }
             }
@@ -360,7 +372,6 @@ console.log(prompt)
             "balance": 0,
           } 
           cliente_service.create(body, req.user.id_cliente);
-          console.log("Producto contratado")
         }
       }
     else {
@@ -425,8 +436,9 @@ router.post("/voice-chat", validacionJWT, upload.single("audio"), async (req, re
 
    // Registros de usuario
 
-const cuentas_propias = (await axios.get(`http://api.nessieisreal.com/customers/${req.user.id_cliente}/accounts?key=b9c71161ea6125345750dcb92f0df27c`)).data;
-
+//const cuentas_propias = (await axios.get(`http://api.nessieisreal.com/customers/${req.user.id_cliente}/accounts?key=b9c71161ea6125345750dcb92f0df27c`)).data;
+const cuentas_propias = (await axios.get(`http://localhost:3001/customers/${req.user.id_cliente}/accounts`)).data;
+console.log("Cuentas propias", cuentas_propias)
 const contactos_usuario = await models.Contacto.findAll()
 
   const tarjetasCredito = {
@@ -597,7 +609,12 @@ const prompt = `
     "status": "done"
   }
     No incluyas caracteres especiales que puedan romper el JSON, no estan permitidos caracteres especiales entre las comillas
-
+Usa **únicamente** la información de productos, cuentas y contactos que te proporcioné arriba. 
+Si el usuario menciona algo que no está en esa información, responde:
+{
+  "message": "No tengo información sobre ese producto o servicio en Capital One.",
+  "status": "done"
+}
   `;
 
     // Guardar mensaje del usuario en DB
@@ -621,7 +638,23 @@ const prompt = `
 
     context.unshift({
       role: 'system',
-      content: 'Eres un Agente de banca conversacional que entiende productos financieros válidos...'
+      content: `
+Eres un agente oficial de banca de **Capital One**. 
+Tu única función es manejar conversaciones de clientes relacionadas con:
+- Transferencias bancarias
+- Altas de contactos
+- Contratación de productos financieros válidos de Capital One (tarjetas, cuentas, préstamos)
+
+❗ No puedes hablar sobre temas fuera del ámbito bancario o de Capital One.
+❗ No puedes inventar productos, políticas, cuentas o nombres de personas.
+❗ Si el usuario habla de temas no bancarios, responde con:
+{
+  "message": "Lo siento, solo puedo ayudarte con servicios de Capital One.",
+  "status": "done"
+}
+
+Toda respuesta debe ser **JSON válido** y ajustarse exactamente a la estructura proporcionada.
+`
     });
 
     // 6️⃣ Llamada a OpenRouter
@@ -638,7 +671,8 @@ const prompt = `
     // 7️⃣ Ejecutar acciones si decision === "listo"
     if (botResponse.status === "done" && botResponse.decision === "listo") {
       if (botResponse.accion === "alta_contacto") {
-        const cuentas = (await axios.get("http://api.nessieisreal.com/accounts?key=b9c71161ea6125345750dcb92f0df27c")).data;
+        //const cuentas = (await axios.get("http://api.nessieisreal.com/accounts?key=b9c71161ea6125345750dcb92f0df27c")).data;
+        const cuentas = (await axios.get("http://localhost:3001/accounts")).data
         for (let i = 0; i < cuentas.length; i++) {
           if (cuentas[i].account_number == botResponse.detalle.numero_de_cuenta) {
             await models.Contacto.create({
